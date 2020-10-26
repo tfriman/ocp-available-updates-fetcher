@@ -2,7 +2,7 @@
 ;; Fetches OpenShift upgrade paths
 ;; usage: ./ocp-available-updates.sh # asks for channel and version
 ;;  ./ocp-available-updates.sh channel # asks only for version
-;;  ./ocp-available-updates.sh channel version # just fetches
+;;  ./ocp-available-updates.sh channel version # fixed stuff, no fzf
 
 (require '[clojure.java.io :as io]
          '[clojure.java.shell :refer [sh]]
