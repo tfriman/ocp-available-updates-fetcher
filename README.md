@@ -34,6 +34,10 @@ docker run -it --rm quay.io/tfriman/ocp-available-updates-fetcher:v1 fast-4.5
 docker run -it --rm quay.io/tfriman/ocp-available-updates-fetcher:v1 fast-4.5 4.4.17
 ```
 
+## Elisp version is there for Emacs 
+
+Open [openshiftupdatefetcher.el](./openshiftupdatefetcher.el) in Emacs (tested with 27.1), M-x eval-buffer and M-x openshiftupdatechecker.
+
 ## License
 
 MIT
