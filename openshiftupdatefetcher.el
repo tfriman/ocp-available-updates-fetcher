@@ -2,8 +2,12 @@
 
 ;; Searches OpenShift's possible version updates via REST api. Asks channel and version as input.
 ;; My first "proper" elisp stuff, be gentle.
-;; Timo Friman
-;; Licence: MIT
+;;
+;; Usage: M-x eval-buffer and after that M-x openshiftupdatechecker
+;;
+;; Dependencies: expects curl to be in $PATH.
+;;
+;; Timo Friman, Licence: MIT
 
 (require 'seq) ;; needed for seq-filter
 (require 'ido) ;; needed for completion
@@ -17,20 +21,20 @@
     (openshiftupdatechecker-find-paths json version)))
 
 (defun openshiftupdatechecker-prompt-version (versions)
-  "Get version from user"
+  "Prompt version"
   (interactive)
   (let ((version (ido-completing-read "Enter version: " versions)))
     (message "version to be searched: %s" version)
     version))
 
 (defun openshiftupdatechecker-prompt-channel ()
-  "Ask update channel"
+  "Prompt update channel"
   (interactive)
   (let ((choices (list "stable-4.5" "stable-4.6" "candidate-4.6")))
     (ido-completing-read "Update channel:" choices)))
 
 (defun openshiftupdatechecker-get-channel-json ()
-  "Get output from curl"
+  "Get output from curl as JSON"
   (let ((channel (openshiftupdatechecker-prompt-channel)))
     (json-parse-string
      (shell-command-to-string
@@ -47,7 +51,7 @@
              (rec x nil)))
 
 (defun openshiftupdatechecker-find-paths (json version)
-  "Find upgrade paths and print it"
+  "Find upgrade paths and print them."
   (interactive)
   (let* ((nodes (gethash "nodes" json))
          (original-edges (gethash "edges" json))
@@ -58,6 +62,6 @@
          (matching-edges (seq-filter (lambda (x)
                                              (string= version (elt x 0))
                                              ) edges))
-         (only-updates (mapcar 'cdr matching-edges)))
-    (message "Possible versions to upgrade: %S" (sort (openshiftupdatefetcher-flatten only-updates) #'string<))
-    ))
+         (only-updates (mapcar 'cdr matching-edges))
+         (updates (sort (openshiftupdatefetcher-flatten only-updates) #'string<)))
+    (message "Possible versions to upgrade: %S" updates)))
