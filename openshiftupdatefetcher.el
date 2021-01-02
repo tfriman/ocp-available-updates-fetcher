@@ -1,6 +1,9 @@
 ;;; openshiftupdatechecker.el -- get openshift update paths
 
+;; Searches OpenShift's possible version updates via REST api. Asks channel and version as input.
 ;; My first "proper" elisp stuff, be gentle.
+;; Timo Friman
+;; Licence: MIT
 
 (require 'seq) ;; needed for seq-filter
 (require 'ido) ;; needed for completion
@@ -8,16 +11,17 @@
 (defun openshiftupdatechecker ()
   "Fetch possible updates for OpenShift "
   (interactive)
-  (openshiftupdatechecker-get-channel-json)
-  (openshiftupdatechecker-find-paths))
+  (let* ((json (openshiftupdatechecker-get-channel-json))
+         (versions (mapcar (lambda (x) (gethash "version" x)) (gethash "nodes" json)))
+         (version (openshiftupdatechecker-prompt-version versions)))
+    (openshiftupdatechecker-find-paths json version)))
 
-(defvar *json-output* nil)
-(defvar *version* nil)
-
-(defun openshiftupdatechecker-prompt-version ()
+(defun openshiftupdatechecker-prompt-version (versions)
   "Get version from user"
   (interactive)
-  (read-string "Enter version (4.4.17): "))
+  (let ((version (ido-completing-read "Enter version: " versions)))
+    (message "version to be searched: %s" version)
+    version))
 
 (defun openshiftupdatechecker-prompt-channel ()
   "Ask update channel"
@@ -27,14 +31,12 @@
 
 (defun openshiftupdatechecker-get-channel-json ()
   "Get output from curl"
-  (let ((channel (openshiftupdatechecker-prompt-channel))
-        (version (openshiftupdatechecker-prompt-version)))
-    (setq *version* version)
-    (message "version to be searched: %s" *version*)
-    (setq *json-output*
-          (json-parse-string
-           (shell-command-to-string
-            (concat "curl -sqH 'Accept:application/json' 'https://api.openshift.com/api/upgrades_info/v1/graph?channel='" channel))))))
+  (let ((channel (openshiftupdatechecker-prompt-channel)))
+    (json-parse-string
+     (shell-command-to-string
+      (concat "curl -sqH 'Accept:application/json' "
+              "'https://api.openshift.com/api/upgrades_info/v1/graph?channel='"
+              channel)))))
 
 (defun openshiftupdatefetcher-flatten (x)
   "Flatten function"
@@ -42,20 +44,20 @@
                    (cond ((null x) acc)
                          ((atom x) (cons x acc))
                          (t (rec (car x) (rec (cdr x) acc))))))
-    (rec x nil)))
+             (rec x nil)))
 
-(defun openshiftupdatechecker-find-paths ()
+(defun openshiftupdatechecker-find-paths (json version)
   "Find upgrade paths and print it"
   (interactive)
-  (let* ((nodes (gethash "nodes" *json-output*))
-         (original-edges (gethash "edges" *json-output*))
+  (let* ((nodes (gethash "nodes" json))
+         (original-edges (gethash "edges" json))
          (versions (mapcar (lambda (x) (gethash "version" x)) nodes))
          (edges (mapcar (lambda (x)
-                          (list (nth (elt x 0) versions) (nth (elt x 1) versions)))
+                                (list (nth (elt x 0) versions) (nth (elt x 1) versions)))
                         original-edges))
          (matching-edges (seq-filter (lambda (x)
-                                       (string= *version* (elt x 0))
-                                       ) edges))
+                                             (string= version (elt x 0))
+                                             ) edges))
          (only-updates (mapcar 'cdr matching-edges)))
     (message "Possible versions to upgrade: %S" (sort (openshiftupdatefetcher-flatten only-updates) #'string<))
     ))
