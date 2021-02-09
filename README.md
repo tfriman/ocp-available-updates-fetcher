@@ -13,7 +13,7 @@ channel from REST API and utilizes
 [fzf](https://github.com/junegunn/fzf).
 
 See [blog
-posting](https://redhatnordicssa.github.io/shell-scripting-using-clojure)
+posting](https://redhatnordicssa.github.io/shell-scripting-using-clojure-and-babashka)
 for more background.
 
 ## Docker building
